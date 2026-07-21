@@ -1,0 +1,72 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Xcode
+DerivedData/
+.derived-data-log-*
+build/
+**/*.xcworkspace/xcuserdata/
+**/*.xcodeproj/xcuserdata/
+*.xcuserstate
+*.xccheckout
+*.xcscmblueprint
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM
+*.dSYM.zip
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Packages/
+Package.pins
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+.venv-*/
+venv/
+env/
+.Python
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+dist/
+*.egg-info/
+
+# ML models and generated model data
+*.gguf
+*.safetensors
+*.onnx
+*.mlmodel
+*.mlpackage/
+backend/Qwen/
+backend/models/
+backend/checkpoints/
+backend/.cache/
+
+# Environment and local configuration
+.env
+.env.*
+!.env.example
+*.local
+
+# Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+.cache/
