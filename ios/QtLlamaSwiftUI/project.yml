@@ -33,6 +33,20 @@ targets:
         SWIFT_VERSION: 6.0
         ENABLE_BITCODE: NO
         CODE_SIGN_STYLE: Automatic
+  QtLlamaSwiftUITests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - Tests
+    dependencies:
+      - target: QtLlamaSwiftUI
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.eloddobos.qtllama.swiftui.tests
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_VERSION: 6.0
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/QtLlama.app/QtLlama"
+        BUNDLE_LOADER: "$(TEST_HOST)"
 schemes:
   QtLlamaSwiftUI:
     build:
@@ -40,3 +54,6 @@ schemes:
         QtLlamaSwiftUI: all
     run:
       config: Debug
+    test:
+      targets:
+        - QtLlamaSwiftUITests

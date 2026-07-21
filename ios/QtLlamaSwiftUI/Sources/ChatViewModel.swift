@@ -1,6 +1,15 @@
 import Foundation
 import MLXQtBridge
 
+protocol ModelManaging: Sendable {
+    func setProgressHandler(_ handler: (@Sendable (Int) -> Void)?) async
+    func ensureDownloaded() async throws
+    func load() async throws
+    func generate(prompt: String) async throws -> String
+}
+
+extension ModelManager: ModelManaging {}
+
 struct ChatMessage: Identifiable, Equatable {
     enum Author {
         case user
@@ -24,7 +33,11 @@ final class ChatViewModel: ObservableObject {
     @Published var isModelReady = false
     @Published var isGenerating = false
 
-    private let modelManager = ModelManager()
+    private let modelManager: any ModelManaging
+
+    init(modelManager: any ModelManaging = ModelManager()) {
+        self.modelManager = modelManager
+    }
 
     var canDownload: Bool { !isDownloading && !isModelReady }
     var canSend: Bool {
