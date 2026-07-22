@@ -1,66 +1,66 @@
 import Foundation
-import XCTest
+import Testing
 
 @testable import MLXQtBridge
 
 @MainActor
-final class ModelManagerTests: XCTestCase {
-    func testGenerateBeforeLoadingModelThrows() async {
+struct ModelManagerTests {
+    @Test func generateBeforeLoadingModelThrows() async {
         let manager = ModelManager()
 
         do {
             _ = try await manager.generate(prompt: "Hello")
-            XCTFail("Expected generation without a loaded model to fail")
+            Issue.record("Expected generation without a loaded model to fail")
         } catch {
-            XCTAssertEqual(
-                error.localizedDescription,
-                "Select and load an MLX model directory first."
+            #expect(
+                error.localizedDescription
+                    == "Select and load an MLX model directory first."
             )
         }
     }
 
-    func testLoadModelReportsMissingConfigFile() async throws {
+    @Test func loadModelReportsMissingConfigFile() async throws {
         let directory = try makeTemporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
         do {
             _ = try await ModelManager().loadModel(at: directory.path)
-            XCTFail("Expected a directory without config.json to be rejected")
+            Issue.record("Expected a directory without config.json to be rejected")
         } catch {
-            XCTAssertEqual(
-                error.localizedDescription,
-                "The selected MLX model directory is missing config.json."
+            #expect(
+                error.localizedDescription
+                    == "The selected MLX model directory is missing config.json."
             )
         }
     }
 
-    func testLoadModelReportsMissingTokenizerFile() async throws {
+    @Test func loadModelReportsMissingTokenizerFile() async throws {
         let directory = try makeTemporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
         try Data("{}".utf8).write(to: directory.appending(path: "config.json"))
 
         do {
             _ = try await ModelManager().loadModel(at: directory.path)
-            XCTFail("Expected a directory without tokenizer.json to be rejected")
+            Issue.record("Expected a directory without tokenizer.json to be rejected")
         } catch {
-            XCTAssertEqual(
-                error.localizedDescription,
-                "The selected MLX model directory is missing tokenizer.json."
+            #expect(
+                error.localizedDescription
+                    == "The selected MLX model directory is missing tokenizer.json."
             )
         }
     }
 
-    func testUnloadLeavesManagerWithoutActiveModel() async {
+    @Test func unloadLeavesManagerWithoutActiveModel() async {
         let manager = ModelManager()
         await manager.unload()
 
         do {
             _ = try await manager.generate(prompt: "Hello")
-            XCTFail("Expected generation after unload to fail")
+            Issue.record("Expected generation after unload to fail")
         } catch {
-            XCTAssertEqual(
-                error.localizedDescription,
-                "Select and load an MLX model directory first."
+            #expect(
+                error.localizedDescription
+                    == "Select and load an MLX model directory first."
             )
         }
     }

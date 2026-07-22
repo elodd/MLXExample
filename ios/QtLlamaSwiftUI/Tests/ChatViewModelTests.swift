@@ -1,62 +1,64 @@
-import XCTest
+import Foundation
+import Testing
+
 @testable import QtLlama
 
 @MainActor
-final class ChatViewModelTests: XCTestCase {
-    func testInitialStateAndAvailability() {
+struct ChatViewModelTests {
+    @Test func initialStateAndAvailability() {
         let viewModel = ChatViewModel(modelManager: ModelManagerStub())
 
-        XCTAssertEqual(viewModel.messages, [])
-        XCTAssertEqual(viewModel.modelName, "No model selected")
-        XCTAssertEqual(viewModel.status, "Ready")
-        XCTAssertTrue(viewModel.canDownload)
-        XCTAssertFalse(viewModel.canSend)
+        #expect(viewModel.messages == [])
+        #expect(viewModel.modelName == "No model selected")
+        #expect(viewModel.status == "Ready")
+        #expect(viewModel.canDownload)
+        #expect(!viewModel.canSend)
     }
 
-    func testCanSendRequiresReadyModelAndNonWhitespaceDraft() {
+    @Test func canSendRequiresReadyModelAndNonWhitespaceDraft() {
         let viewModel = ChatViewModel(modelManager: ModelManagerStub())
         viewModel.isModelReady = true
 
         viewModel.draft = " \n\t "
-        XCTAssertFalse(viewModel.canSend)
+        #expect(!viewModel.canSend)
 
         viewModel.draft = "Hello"
-        XCTAssertTrue(viewModel.canSend)
+        #expect(viewModel.canSend)
 
         viewModel.isGenerating = true
-        XCTAssertFalse(viewModel.canSend)
+        #expect(!viewModel.canSend)
     }
 
-    func testDownloadSuccessUpdatesProgressAndReadyState() async {
+    @Test func downloadSuccessUpdatesProgressAndReadyState() async {
         let stub = ModelManagerStub(progressValues: [15, 72])
         let viewModel = ChatViewModel(modelManager: stub)
 
         viewModel.downloadModel()
 
-        await waitUntil { viewModel.isModelReady && !viewModel.isDownloading }
-        XCTAssertEqual(viewModel.progress, 100)
-        XCTAssertEqual(viewModel.modelName, "Qwen3-4B-4bit-mlx")
-        XCTAssertEqual(viewModel.status, "Model ready")
+        #expect(await waitUntil { viewModel.isModelReady && !viewModel.isDownloading })
+        #expect(viewModel.progress == 100)
+        #expect(viewModel.modelName == "Qwen3-4B-4bit-mlx")
+        #expect(viewModel.status == "Model ready")
         let calls = await stub.calls()
-        XCTAssertEqual(calls, [.ensureDownloaded, .load])
+        #expect(calls == [.ensureDownloaded, .load])
     }
 
-    func testDownloadFailureShowsErrorAndAllowsRetry() async {
+    @Test func downloadFailureShowsErrorAndAllowsRetry() async {
         let stub = ModelManagerStub(downloadError: TestError.download)
         let viewModel = ChatViewModel(modelManager: stub)
 
         viewModel.downloadModel()
 
-        await waitUntil { !viewModel.isDownloading && !viewModel.messages.isEmpty }
-        XCTAssertEqual(viewModel.messages.last?.author, .error)
-        XCTAssertEqual(viewModel.messages.last?.text, TestError.download.localizedDescription)
-        XCTAssertEqual(viewModel.modelName, "Download failed")
-        XCTAssertEqual(viewModel.status, "Download failed")
-        XCTAssertTrue(viewModel.canDownload)
-        XCTAssertFalse(viewModel.isModelReady)
+        #expect(await waitUntil { !viewModel.isDownloading && !viewModel.messages.isEmpty })
+        #expect(viewModel.messages.last?.author == .error)
+        #expect(viewModel.messages.last?.text == TestError.download.localizedDescription)
+        #expect(viewModel.modelName == "Download failed")
+        #expect(viewModel.status == "Download failed")
+        #expect(viewModel.canDownload)
+        #expect(!viewModel.isModelReady)
     }
 
-    func testSendTrimsPromptAndAppendsResponse() async {
+    @Test func sendTrimsPromptAndAppendsResponse() async {
         let stub = ModelManagerStub(response: "Hi there")
         let viewModel = ChatViewModel(modelManager: stub)
         viewModel.isModelReady = true
@@ -64,20 +66,20 @@ final class ChatViewModelTests: XCTestCase {
 
         viewModel.send()
 
-        XCTAssertEqual(viewModel.messages.count, 1)
-        XCTAssertEqual(viewModel.messages.first?.author, .user)
-        XCTAssertEqual(viewModel.messages.first?.text, "Hello model")
-        XCTAssertEqual(viewModel.draft, "")
-        XCTAssertTrue(viewModel.isGenerating)
-        await waitUntil { !viewModel.isGenerating }
-        XCTAssertEqual(viewModel.messages.map(\.author), [.user, .model])
-        XCTAssertEqual(viewModel.messages.last?.text, "Hi there")
-        XCTAssertEqual(viewModel.status, "Ready")
+        #expect(viewModel.messages.count == 1)
+        #expect(viewModel.messages.first?.author == .user)
+        #expect(viewModel.messages.first?.text == "Hello model")
+        #expect(viewModel.draft == "")
+        #expect(viewModel.isGenerating)
+        #expect(await waitUntil { !viewModel.isGenerating })
+        #expect(viewModel.messages.map(\.author) == [.user, .model])
+        #expect(viewModel.messages.last?.text == "Hi there")
+        #expect(viewModel.status == "Ready")
         let prompts = await stub.prompts()
-        XCTAssertEqual(prompts, ["Hello model"])
+        #expect(prompts == ["Hello model"])
     }
 
-    func testSendFailureAppendsError() async {
+    @Test func sendFailureAppendsError() async {
         let stub = ModelManagerStub(generateError: TestError.generation)
         let viewModel = ChatViewModel(modelManager: stub)
         viewModel.isModelReady = true
@@ -85,13 +87,13 @@ final class ChatViewModelTests: XCTestCase {
 
         viewModel.send()
 
-        await waitUntil { !viewModel.isGenerating }
-        XCTAssertEqual(viewModel.messages.map(\.author), [.user, .error])
-        XCTAssertEqual(viewModel.messages.last?.text, TestError.generation.localizedDescription)
-        XCTAssertEqual(viewModel.status, "Model error")
+        #expect(await waitUntil { !viewModel.isGenerating })
+        #expect(viewModel.messages.map(\.author) == [.user, .error])
+        #expect(viewModel.messages.last?.text == TestError.generation.localizedDescription)
+        #expect(viewModel.status == "Model error")
     }
 
-    func testSendIgnoresInvalidState() async {
+    @Test func sendIgnoresInvalidState() async {
         let stub = ModelManagerStub()
         let viewModel = ChatViewModel(modelManager: stub)
         viewModel.draft = "Hello"
@@ -99,22 +101,22 @@ final class ChatViewModelTests: XCTestCase {
         viewModel.send()
 
         await Task.yield()
-        XCTAssertEqual(viewModel.messages, [])
-        XCTAssertEqual(viewModel.draft, "Hello")
+        #expect(viewModel.messages == [])
+        #expect(viewModel.draft == "Hello")
         let prompts = await stub.prompts()
-        XCTAssertEqual(prompts, [])
+        #expect(prompts == [])
     }
 
     private func waitUntil(
         timeout: Duration = .seconds(1),
         condition: @MainActor () -> Bool
-    ) async {
+    ) async -> Bool {
         let clock = ContinuousClock()
         let deadline = clock.now.advanced(by: timeout)
         while !condition() && clock.now < deadline {
             await Task.yield()
         }
-        XCTAssertTrue(condition(), "Timed out waiting for asynchronous state change")
+        return condition()
     }
 }
 
