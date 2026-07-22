@@ -3,6 +3,7 @@ import XCTest
 
 @testable import MLXQtBridge
 
+@MainActor
 final class ModelManagerTests: XCTestCase {
     func testGenerateBeforeLoadingModelThrows() async {
         let manager = ModelManager()

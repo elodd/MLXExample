@@ -48,8 +48,9 @@ Apple-silicon device is the intended inference target.
 ```
 
 The app references `../MLXQtBridge` for model downloading, loading, and
-on-device inference. Shared property-list and privacy files live one directory
-above this app folder.
+on-device inference. That package has its own
+`Tests/MLXQtBridgeTests/ModelManagerTests.swift` unit-test suite. Shared
+property-list and privacy files live one directory above this app folder.
 
 ## Build and run
 
@@ -89,6 +90,28 @@ xcodegen generate
 
 Do not edit generated project settings directly when the equivalent change
 belongs in `project.yml`.
+
+## Tests
+
+Run the MLX bridge tests from this directory. They validate missing model
+files and unloaded-model behavior without downloading or loading model
+weights:
+
+```sh
+swift test --package-path ../MLXQtBridge
+```
+
+After generating the Xcode project, run the SwiftUI view-model tests with an
+installed simulator:
+
+```sh
+xcodebuild test \
+  -project QtLlamaSwiftUI.xcodeproj \
+  -scheme QtLlamaSwiftUI \
+  -destination 'platform=iOS Simulator,name=iPhone 16 Pro'
+```
+
+Replace the simulator name if `iPhone 16 Pro` is not installed.
 
 ## Download and use the model
 

@@ -74,8 +74,10 @@ the intended inference target.
     ├── PrivacyInfo.xcprivacy         App privacy manifest
     ├── MLXQtBridge/                  On-device MLX inference package
     │   ├── Package.swift             Swift package definition
-    │   └── Sources/MLXQtBridge/
-    │       └── MLXQtBridge.swift     Model download, loading, and inference
+    │   ├── Sources/MLXQtBridge/
+    │   │   └── MLXQtBridge.swift     Model download, loading, and inference
+    │   └── Tests/MLXQtBridgeTests/
+    │       └── ModelManagerTests.swift
     └── QtLlamaSwiftUI/               SwiftUI frontend
         ├── README.md                 iOS-specific setup notes
         ├── project.yml               XcodeGen project definition
@@ -177,6 +179,13 @@ so conversion dependencies are not required:
 
 ```sh
 python3 -m unittest discover -s backend/tests -v
+```
+
+The MLX bridge tests cover unloaded-model behavior and model-directory
+validation without downloading or loading model weights:
+
+```sh
+swift test --package-path ios/MLXQtBridge
 ```
 
 After generating the Xcode project, run the SwiftUI unit tests with an
