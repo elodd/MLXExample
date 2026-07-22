@@ -38,6 +38,7 @@ Apple-silicon device is the intended inference target.
 ```text
 .
 ├── README.md                         SwiftUI app documentation
+├── Assets.xcassets/                  App icon asset catalog
 ├── project.yml                       XcodeGen project definition
 ├── Sources/
 │   ├── QtLlamaApp.swift              Application entry point

@@ -80,6 +80,11 @@ the intended inference target.
     │       └── ModelManagerTests.swift
     └── QtLlamaSwiftUI/               SwiftUI frontend
         ├── README.md                 iOS-specific setup notes
+        ├── Assets.xcassets/          App asset catalog
+        │   ├── Contents.json
+        │   └── AppIcon.appiconset/
+        │       ├── Contents.json
+        │       └── AppIcon-1024.png  App icon master artwork
         ├── project.yml               XcodeGen project definition
         ├── Sources/
         │   ├── QtLlamaApp.swift      Application entry point

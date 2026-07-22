@@ -12,9 +12,10 @@ targets:
     platform: iOS
     sources:
       - Sources
-    resources:
-      - path: ../Assets.xcassets
+      - path: Assets.xcassets
+        buildPhase: resources
       - path: ../PrivacyInfo.xcprivacy
+        buildPhase: resources
     dependencies:
       - package: MLXQtBridge
         product: MLXQtBridge
