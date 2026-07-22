@@ -30,7 +30,13 @@ struct ContentView: View {
         }
         .preferredColorScheme(.dark)
         .onChange(of: viewModel.isModelReady) { _, isReady in
-            if isReady {
+            guard isReady else {
+                isComposerFocused = false
+                return
+            }
+            Task { @MainActor in
+                await Task.yield()
+                guard viewModel.isModelReady else { return }
                 isComposerFocused = true
             }
         }
@@ -89,6 +95,7 @@ struct ContentView: View {
     private var composer: some View {
         HStack(alignment: .bottom, spacing: 10) {
             TextField("Message your model…", text: $viewModel.draft, axis: .vertical)
+                .focused($isComposerFocused)
                 .lineLimit(1...4)
                 .padding(10)
                 .background(Color(red: 0.102, green: 0.118, blue: 0.149))
