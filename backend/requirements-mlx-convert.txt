@@ -1,5 +1,0 @@
-# MLX conversion environment for Apple-silicon macOS.
-# mlx-lm declares and installs its compatible versions of mlx, NumPy,
-# Transformers, Hugging Face Hub, safetensors, tokenizers, Jinja2, PyYAML,
-# and protobuf. Do not install PyTorch; it is not required for this conversion.
-mlx-lm==0.31.3
