@@ -42,5 +42,9 @@ let package = Package(
                 .product(name: "ZIPFoundation", package: "ZIPFoundation"),
             ]
         ),
+        .testTarget(
+            name: "MLXQtBridgeTests",
+            dependencies: ["MLXQtBridge"]
+        ),
     ]
 )
