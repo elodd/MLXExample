@@ -51,7 +51,7 @@ functions for use by other native UI layers.
 - An Apple development team for device installation
 - Approximately 2.1 GB for the model download, plus extraction and runtime
   space
-- XcodeGen only when regenerating the checked-in Xcode project
+- [XcodeGen](https://github.com/yonaskolb/XcodeGen)
 
 A recent device with at least 6 GB of memory is recommended for the four-bit
 4B model. The simulator is useful for UI development, but a physical device is
@@ -70,23 +70,21 @@ the intended inference target.
 │   └── tests/
 │       └── test_convert_to_mlx.py    Converter unit tests
 └── ios/
-    ├── Assets.xcassets/              Shared app assets and app icon
     ├── Info.plist.in                 Info property-list template
     ├── PrivacyInfo.xcprivacy         App privacy manifest
     ├── MLXQtBridge/                  On-device MLX inference package
     │   ├── Package.swift             Swift package definition
-    │   ├── Package.resolved          Pinned Swift dependencies
     │   └── Sources/MLXQtBridge/
     │       └── MLXQtBridge.swift     Model download, loading, and inference
     └── QtLlamaSwiftUI/               SwiftUI frontend
+        ├── README.md                 iOS-specific setup notes
+        ├── project.yml               XcodeGen project definition
         ├── Sources/
         │   ├── QtLlamaApp.swift      Application entry point
         │   ├── ContentView.swift     Chat interface
         │   └── ChatViewModel.swift   UI state and bridge integration
-        ├── Tests/
-        │   └── ChatViewModelTests.swift
-        ├── project.yml               XcodeGen project definition
-        └── QtLlamaSwiftUI.xcodeproj/ Checked-in Xcode project
+        └── Tests/
+            └── ChatViewModelTests.swift
 ```
 
 Python is used only for optional model conversion. The iOS app does not run a
@@ -94,17 +92,19 @@ Python service.
 
 ## Build and run
 
-1. Open `ios/QtLlamaSwiftUI/QtLlamaSwiftUI.xcodeproj` in Xcode.
-2. Select the `QtLlamaSwiftUI` target.
-3. Under **Signing & Capabilities**, choose your development team and change
+1. Generate the Xcode project with the command in the next section.
+2. Open `ios/QtLlamaSwiftUI/QtLlamaSwiftUI.xcodeproj` in Xcode.
+3. Select the `QtLlamaSwiftUI` target.
+4. Under **Signing & Capabilities**, choose your development team and change
    the bundle identifier if needed.
-4. Select an iPhone or iPad running iOS 17 or later.
-5. Build and run the `QtLlamaSwiftUI` scheme.
+5. Select an iPhone or iPad running iOS 17 or later.
+6. Build and run the `QtLlamaSwiftUI` scheme.
 
 The project uses `ios/MLXQtBridge` as a local Swift package. Xcode resolves its
 pinned dependencies the first time the project is opened.
 
-To verify a simulator build from the repository root:
+After generating the project, verify a simulator build from the repository
+root with:
 
 ```sh
 xcodebuild \
@@ -116,11 +116,11 @@ xcodebuild \
   build
 ```
 
-### Regenerate the Xcode project
+### Generate the Xcode project
 
-The checked-in project is generated from `ios/QtLlamaSwiftUI/project.yml`.
-After changing that definition, install
-[XcodeGen](https://github.com/yonaskolb/XcodeGen) and run:
+The Xcode project is generated locally from
+`ios/QtLlamaSwiftUI/project.yml` and is not stored in the repository. Install
+XcodeGen, then run:
 
 ```sh
 cd ios/QtLlamaSwiftUI
@@ -179,7 +179,8 @@ so conversion dependencies are not required:
 python3 -m unittest discover -s backend/tests -v
 ```
 
-Run the SwiftUI unit tests with an installed simulator:
+After generating the Xcode project, run the SwiftUI unit tests with an
+installed simulator:
 
 ```sh
 xcodebuild test \

@@ -22,6 +22,7 @@ loaded successfully.
 
 - An Apple-silicon Mac
 - Xcode with Swift 6 support
+- [XcodeGen](https://github.com/yonaskolb/XcodeGen)
 - iOS 17 or later
 - A physical iPhone or iPad recommended for MLX inference
 - An Apple development team for device installation
@@ -32,33 +33,40 @@ A recent device with at least 6 GB of memory is recommended for the four-bit
 4B model. The iOS Simulator is useful for UI development, but a physical
 Apple-silicon device is the intended inference target.
 
-## Project layout
+## Project structure
 
 ```text
-ios/
-├── Assets.xcassets/          Shared app icons and assets
-├── MLXQtBridge/              Local Swift package for MLX model operations
-├── PrivacyInfo.xcprivacy     Privacy manifest
-└── QtLlamaSwiftUI/
-    ├── Sources/              SwiftUI app and view model
-    ├── project.yml           XcodeGen project definition
-    └── QtLlamaSwiftUI.xcodeproj
+.
+├── README.md                         SwiftUI app documentation
+├── project.yml                       XcodeGen project definition
+├── Sources/
+│   ├── QtLlamaApp.swift              Application entry point
+│   ├── ContentView.swift             Chat interface
+│   └── ChatViewModel.swift           UI state and MLX bridge integration
+└── Tests/
+    └── ChatViewModelTests.swift      View-model unit tests
 ```
+
+The app references `../MLXQtBridge` for model downloading, loading, and
+on-device inference. Shared property-list and privacy files live one directory
+above this app folder.
 
 ## Build and run
 
-1. Open `QtLlamaSwiftUI.xcodeproj` in Xcode.
-2. Select the `QtLlamaSwiftUI` target.
-3. Under **Signing & Capabilities**, choose your development team and change
+1. Generate the Xcode project with the command in the next section.
+2. Open `QtLlamaSwiftUI.xcodeproj` in Xcode.
+3. Select the `QtLlamaSwiftUI` target.
+4. Under **Signing & Capabilities**, choose your development team and change
    the bundle identifier if necessary.
-4. Select an iPhone or iPad running iOS 17 or later.
-5. Build and run the `QtLlamaSwiftUI` scheme.
+5. Select an iPhone or iPad running iOS 17 or later.
+6. Build and run the `QtLlamaSwiftUI` scheme.
 
 The project references `../MLXQtBridge` as a local Swift package. Xcode
 resolves its pinned remote dependencies when the project is opened for the
 first time.
 
-A command-line simulator build can be run from this directory:
+After generating the project, a command-line simulator build can be run from
+this directory:
 
 ```sh
 xcodebuild \
@@ -70,11 +78,10 @@ xcodebuild \
   build
 ```
 
-### Regenerate the Xcode project
+### Generate the Xcode project
 
-The checked-in project is generated from `project.yml`. After changing the
-project definition, install [XcodeGen](https://github.com/yonaskolb/XcodeGen)
-and regenerate it:
+The Xcode project is generated locally from `project.yml` and is not stored in
+the repository. Install XcodeGen, then generate it:
 
 ```sh
 xcodegen generate
