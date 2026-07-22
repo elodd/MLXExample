@@ -135,12 +135,25 @@ Replace the simulator name if `iPhone 16 Pro` is not installed.
 
 ## Download and use the model
 
+The repository uses `https://example.com/model.zip` as a placeholder. Before
+using **Download model**, update `defaultArchiveURL` in
+`../MLXQtBridge/Sources/MLXQtBridge/MLXQtBridge.swift` to an HTTPS URL for a ZIP
+archive containing the `Qwen3-4B-4bit-mlx` model files.
+
+Code that creates `ModelManager` directly can instead inject the URL:
+
+```swift
+let manager = ModelManager(
+    archiveURL: URL(string: "https://your-host.example/Qwen3-4B-4bit-mlx.zip")!
+)
+```
+
 1. Launch the app and tap **Download model**.
 2. Keep the app in the foreground while the archive downloads and extracts.
 3. Wait until the status changes to **Model ready**.
 4. Enter a prompt in **Message your model…** and tap **Send**.
 
-The app downloads the `Qwen3-4B-4bit-mlx` archive over HTTPS, extracts it into
+The app downloads the configured archive over HTTPS, extracts it into
 `Application Support/Models`, and loads it with MLX Swift LM. A completed
 download is reused on later attempts instead of being downloaded again.
 
@@ -168,9 +181,9 @@ python convert_to_mlx.py
 
 Run `python convert_to_mlx.py --help` to choose another source model, output
 directory, quantization size, group size, revision, or Hugging Face upload
-repository. The SwiftUI app's download URL remains configured in
-`MLXQtBridge.swift`; producing a local conversion does not automatically
-change the model downloaded by the app.
+repository. Producing a local conversion does not automatically change the
+model downloaded by the app; publish it as a ZIP archive and configure its URL
+as described above.
 
 ## Troubleshooting
 

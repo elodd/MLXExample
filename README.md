@@ -5,8 +5,8 @@ Native Qwen3 chat for iPhone and iPad, powered by Apple MLX.
 MLXExample combines a SwiftUI interface with an on-device inference layer. It
 runs Qwen3 locally through
 [MLX Swift LM](https://github.com/ml-explore/mlx-swift-lm), without an API
-server. The app downloads a four-bit MLX model, caches it on the device, and
-processes conversations locally after the initial download.
+server. After a model archive URL is configured, the app downloads a four-bit
+MLX model, caches it on the device, and processes conversations locally.
 
 ## Features
 
@@ -155,12 +155,25 @@ xcodegen generate
 
 ## Download and use the model
 
+The repository uses `https://example.com/model.zip` as a placeholder. Before
+using **Download model**, update `defaultArchiveURL` in
+`ios/MLXQtBridge/Sources/MLXQtBridge/MLXQtBridge.swift` to an HTTPS URL for a
+ZIP archive containing the `Qwen3-4B-4bit-mlx` model files.
+
+Library clients can instead provide the URL when creating the manager:
+
+```swift
+let manager = ModelManager(
+    archiveURL: URL(string: "https://your-host.example/Qwen3-4B-4bit-mlx.zip")!
+)
+```
+
 1. Launch the app and tap **Download model**.
 2. Keep the app in the foreground while the archive downloads and extracts.
 3. Wait for the status to change to **Model ready**.
 4. Enter a prompt and tap **Send**.
 
-The app downloads `Qwen3-4B-4bit-mlx`, extracts it into
+The app downloads the configured archive, extracts `Qwen3-4B-4bit-mlx` into
 `Application Support/Models`, and reuses it on later launches. Generation uses
 a 512-token maximum response length, a 2,048-token rotating KV cache, and a
 temperature of 0.7. Deleting the app or its data removes the cached model.
@@ -193,8 +206,8 @@ python src/convert_to_mlx.py \
 The converter accepts a Hugging Face repository ID or a local directory with
 Hugging Face-format weights. It does not overwrite an existing output
 directory. A local conversion does not change the model downloaded by the app;
-that URL is configured in
-`ios/MLXQtBridge/Sources/MLXQtBridge/MLXQtBridge.swift`.
+publish the resulting directory as a ZIP archive and configure its URL as
+described above.
 
 ## Tests
 

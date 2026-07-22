@@ -103,13 +103,16 @@ public actor ModelManager {
     private var preparedContainer: ModelContainer?
     private var modelDirectory: URL?
     private var progressHandler: (@Sendable (Int) -> Void)?
+    private let archiveURL: URL
 
-    private static let archiveURL = URL(string:
-        "https://drive.usercontent.google.com/download?id=1fgLH3juOqMJLx2JR3-S6ST7-sxWsYF7I&export=download&confirm=t"
+    private static let defaultArchiveURL = URL(string:
+        "https://example.com/model.zip"
     )!
     private static let modelName = "Qwen3-4B-4bit-mlx"
 
-    public init() {}
+    public init(archiveURL: URL? = nil) {
+        self.archiveURL = archiveURL ?? Self.defaultArchiveURL
+    }
 
     public func setProgressHandler(
         _ handler: (@Sendable (Int) -> Void)?
@@ -140,7 +143,7 @@ public actor ModelManager {
         try files.createDirectory(at: staging, withIntermediateDirectories: true)
 
         _ = try await ModelArchiveDownloader.download(
-            from: Self.archiveURL, to: archive,
+            from: archiveURL, to: archive,
             progressHandler: progressHandler ?? { _ in }
         )
         progressHandler?(92)
