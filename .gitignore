@@ -7,8 +7,8 @@
 DerivedData/
 .derived-data-log-*
 build/
+**/*.xcodeproj/
 **/*.xcworkspace/xcuserdata/
-**/*.xcodeproj/xcuserdata/
 *.xcuserstate
 *.xccheckout
 *.xcscmblueprint
