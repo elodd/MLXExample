@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var viewModel = ChatViewModel()
+    @FocusState private var isComposerFocused: Bool
 
     var body: some View {
         ZStack {
@@ -28,6 +29,11 @@ struct ContentView: View {
             .padding(.vertical, 18)
         }
         .preferredColorScheme(.dark)
+        .onChange(of: viewModel.isModelReady) { _, isReady in
+            if isReady {
+                isComposerFocused = true
+            }
+        }
     }
 
     private var modelSection: some View {
