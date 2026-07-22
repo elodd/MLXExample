@@ -9,6 +9,7 @@ does not require `llama.cpp` or an OpenAI-compatible server.
 
 - Native SwiftUI chat interface
 - On-device model inference with MLX
+- Model download and retry controls
 - Download progress and model-loading status
 - Persistent model cache in the app's Application Support directory
 - Multi-turn chat session with selectable response text

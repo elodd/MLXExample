@@ -12,6 +12,7 @@ MLX model, caches it on the device, and processes conversations locally.
 
 - Native SwiftUI chat interface
 - On-device inference using Apple MLX
+- Model download and retry controls
 - Model download and extraction progress
 - Persistent model cache in the app's Application Support directory
 - Multi-turn chat with selectable responses
