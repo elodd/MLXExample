@@ -24,30 +24,53 @@ private final class ModelArchiveDownloader: NSObject, URLSessionDownloadDelegate
     @unchecked Sendable
 {
     private let destination: URL
+    private let expectedBytes: Int64
     private let progressHandler: @Sendable (Int) -> Void
     private var continuation: CheckedContinuation<URL, Error>?
     private var session: URLSession?
 
-    private init(destination: URL, progressHandler: @Sendable @escaping (Int) -> Void) {
+    private init(
+        destination: URL,
+        expectedBytes: Int64,
+        progressHandler: @Sendable @escaping (Int) -> Void
+    ) {
         self.destination = destination
+        self.expectedBytes = expectedBytes
         self.progressHandler = progressHandler
     }
 
     static func download(
         from source: URL,
         to destination: URL,
+        expectedBytes: Int64,
         progressHandler: @Sendable @escaping (Int) -> Void
     ) async throws -> URL {
+        guard let scheme = source.scheme?.lowercased(),
+              scheme == "https" || scheme == "http"
+        else {
+            throw MLXBridgeError.invalidArchiveURL
+        }
         let delegate = ModelArchiveDownloader(
-            destination: destination, progressHandler: progressHandler
+            destination: destination,
+            expectedBytes: expectedBytes,
+            progressHandler: progressHandler
         )
         return try await withCheckedThrowingContinuation { continuation in
             delegate.continuation = continuation
+            let configuration = URLSessionConfiguration.default
+            configuration.timeoutIntervalForRequest = 120
+            configuration.timeoutIntervalForResource = 24 * 60 * 60
             let session = URLSession(
-                configuration: .default, delegate: delegate, delegateQueue: nil
+                configuration: configuration, delegate: delegate, delegateQueue: nil
             )
             delegate.session = session
-            session.downloadTask(with: source).resume()
+            var request = URLRequest(
+                url: source,
+                cachePolicy: .reloadIgnoringLocalCacheData,
+                timeoutInterval: 120
+            )
+            request.setValue(nil, forHTTPHeaderField: "Range")
+            session.downloadTask(with: request).resume()
         }
     }
 
@@ -58,8 +81,10 @@ private final class ModelArchiveDownloader: NSObject, URLSessionDownloadDelegate
         totalBytesWritten: Int64,
         totalBytesExpectedToWrite: Int64
     ) {
-        guard totalBytesExpectedToWrite > 0 else { return }
-        let fraction = Double(totalBytesWritten) / Double(totalBytesExpectedToWrite)
+        let totalBytes = totalBytesExpectedToWrite > 0
+            ? totalBytesExpectedToWrite : expectedBytes
+        guard totalBytes > 0 else { return }
+        let fraction = Double(totalBytesWritten) / Double(totalBytes)
         progressHandler(min(90, Int((fraction * 90).rounded())))
     }
 
@@ -69,6 +94,26 @@ private final class ModelArchiveDownloader: NSObject, URLSessionDownloadDelegate
         didFinishDownloadingTo location: URL
     ) {
         do {
+            guard let response = downloadTask.response as? HTTPURLResponse,
+                  (200...299).contains(response.statusCode)
+            else {
+                let status = (downloadTask.response as? HTTPURLResponse)?.statusCode ?? 0
+                throw MLXBridgeError.downloadRejected(status)
+            }
+            let handle = try FileHandle(forReadingFrom: location)
+            let signature = try handle.read(upToCount: 4) ?? Data()
+            guard Self.isZIPSignature(signature) else {
+                try handle.close()
+                throw MLXBridgeError.invalidDownload
+            }
+            let archiveBytes = try handle.seekToEnd()
+            let tailSize = min(archiveBytes, 65_557)
+            try handle.seek(toOffset: archiveBytes - tailSize)
+            let tail = try handle.readToEnd() ?? Data()
+            try handle.close()
+            guard Self.containsEndOfCentralDirectory(tail) else {
+                throw MLXBridgeError.incompleteArchive(archiveBytes)
+            }
             let files = FileManager.default
             if files.fileExists(atPath: destination.path) {
                 try files.removeItem(at: destination)
@@ -83,6 +128,26 @@ private final class ModelArchiveDownloader: NSObject, URLSessionDownloadDelegate
             continuation = nil
             session.invalidateAndCancel()
         }
+    }
+
+    private static func isZIPSignature(_ data: Data) -> Bool {
+        let signatures: [[UInt8]] = [
+            [0x50, 0x4b, 0x03, 0x04],
+            [0x50, 0x4b, 0x05, 0x06],
+            [0x50, 0x4b, 0x07, 0x08],
+        ]
+        return signatures.contains(Array(data.prefix(4)))
+    }
+
+    private static func containsEndOfCentralDirectory(_ data: Data) -> Bool {
+        let signature: [UInt8] = [0x50, 0x4b, 0x05, 0x06]
+        let bytes = [UInt8](data)
+        guard bytes.count >= signature.count else { return false }
+        for offset in 0...(bytes.count - signature.count)
+        where Array(bytes[offset..<(offset + signature.count)]) == signature {
+            return true
+        }
+        return false
     }
 
     func urlSession(
@@ -103,12 +168,13 @@ public actor ModelManager {
     private var preparedContainer: ModelContainer?
     private var modelDirectory: URL?
     private var progressHandler: (@Sendable (Int) -> Void)?
-    private let archiveURL: URL
+    private let archiveURL: URL?
 
-    private static let defaultArchiveURL = URL(string:
-        "https://drive.usercontent.google.com/download?id=ZIP_FILE_ID&export=download&confirm=t"
-    )!
+    private static let defaultArchiveURL = URL(
+        string: "https://drive.usercontent.google.com/download?id=1JH5g4_ZbrcgECzIFlq1QEKTdoH7-NtSo&export=download&confirm=t"
+    )
     private static let modelName = "Qwen3-4B-4bit-mlx"
+    private static let expectedArchiveBytes: Int64 = 2_051_232_582
 
     public init(archiveURL: URL? = nil) {
         self.archiveURL = archiveURL ?? Self.defaultArchiveURL
@@ -120,8 +186,26 @@ public actor ModelManager {
         progressHandler = handler
     }
 
+    public func resetDownload() throws {
+        session = nil
+        preparedContainer = nil
+        modelDirectory = nil
+
+        let files = FileManager.default
+        let support = try files.url(
+            for: .applicationSupportDirectory, in: .userDomainMask,
+            appropriateFor: nil, create: true
+        )
+        let models = support.appending(path: "Models", directoryHint: .isDirectory)
+        if files.fileExists(atPath: models.path) {
+            try files.removeItem(at: models)
+        }
+        progressHandler?(0)
+    }
+
     public func ensureDownloaded() async throws {
         guard modelDirectory == nil else { return }
+        guard let archiveURL else { throw MLXBridgeError.invalidArchiveURL }
         let files = FileManager.default
         let support = try files.url(
             for: .applicationSupportDirectory, in: .userDomainMask,
@@ -139,16 +223,31 @@ public actor ModelManager {
         try files.createDirectory(at: models, withIntermediateDirectories: true)
         let archive = models.appending(path: "\(Self.modelName).zip")
         let staging = models.appending(path: "\(Self.modelName)-extracting", directoryHint: .isDirectory)
+        if files.fileExists(atPath: archive.path) { try files.removeItem(at: archive) }
         if files.fileExists(atPath: staging.path) { try files.removeItem(at: staging) }
         try files.createDirectory(at: staging, withIntermediateDirectories: true)
 
-        _ = try await ModelArchiveDownloader.download(
-            from: archiveURL, to: archive,
-            progressHandler: progressHandler ?? { _ in }
-        )
-        progressHandler?(92)
-        try files.unzipItem(at: archive, to: staging)
-        progressHandler?(98)
+        do {
+            _ = try await ModelArchiveDownloader.download(
+                from: archiveURL, to: archive,
+                expectedBytes: Self.expectedArchiveBytes,
+                progressHandler: progressHandler ?? { _ in }
+            )
+            progressHandler?(92)
+            do {
+                try files.unzipItem(at: archive, to: staging)
+            } catch {
+                let bytes = (try? archive.resourceValues(
+                    forKeys: [.fileSizeKey]
+                ).fileSize).map(Int64.init) ?? 0
+                throw MLXBridgeError.corruptArchive(bytes)
+            }
+            progressHandler?(98)
+        } catch {
+            try? files.removeItem(at: archive)
+            try? files.removeItem(at: staging)
+            throw error
+        }
 
         guard let extracted = findModelDirectory(in: staging) else {
             throw MLXBridgeError.invalidArchive
@@ -250,6 +349,11 @@ private enum MLXBridgeError: LocalizedError {
     case modelNotLoaded
     case invalidRepository
     case invalidArchive
+    case invalidArchiveURL
+    case downloadRejected(Int)
+    case invalidDownload
+    case incompleteArchive(UInt64)
+    case corruptArchive(Int64)
 
     var errorDescription: String? {
         switch self {
@@ -261,7 +365,25 @@ private enum MLXBridgeError: LocalizedError {
             "Enter a Hugging Face MLX repository ID."
         case .invalidArchive:
             "The downloaded Google Drive archive does not contain an MLX model."
+        case .invalidArchiveURL:
+            "Configure a valid HTTP or HTTPS model archive URL before downloading."
+        case .downloadRejected(let status):
+            status > 0
+                ? "The model server rejected the download (HTTP \(status))."
+                : "The model server returned an invalid response."
+        case .invalidDownload:
+            "The model server did not return a ZIP archive. Check that the download URL points directly to the ZIP file."
+        case .incompleteArchive(let bytes):
+            "The model ZIP is incomplete (downloaded \(Self.byteCount(bytes)) without a ZIP directory). Check the hosted file and try again on a stable connection."
+        case .corruptArchive(let bytes):
+            "The downloaded model ZIP is corrupt (\(Self.byteCount(UInt64(max(0, bytes))))). Recreate the ZIP or verify that the server returns the complete file."
         }
+    }
+
+    private static func byteCount(_ bytes: UInt64) -> String {
+        ByteCountFormatter.string(
+            fromByteCount: Int64(clamping: bytes), countStyle: .file
+        )
     }
 }
 

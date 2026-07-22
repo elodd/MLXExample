@@ -10,7 +10,7 @@ struct ChatViewModelTests {
 
         #expect(viewModel.messages == [])
         #expect(viewModel.modelName == "No model selected")
-        #expect(viewModel.status == "Ready")
+        #expect(viewModel.modelStatus == "No model selected")
         #expect(viewModel.canDownload)
         #expect(!viewModel.canSend)
     }
@@ -36,9 +36,9 @@ struct ChatViewModelTests {
         viewModel.downloadModel()
 
         #expect(await waitUntil { viewModel.isModelReady && !viewModel.isDownloading })
-        #expect(viewModel.progress == 100)
+        #expect(viewModel.downloadProgress == 100)
         #expect(viewModel.modelName == "Qwen3-4B-4bit-mlx")
-        #expect(viewModel.status == "Model ready")
+        #expect(viewModel.modelStatus == "Model ready")
         let calls = await stub.calls()
         #expect(calls == [.ensureDownloaded, .load])
     }
@@ -53,7 +53,7 @@ struct ChatViewModelTests {
         #expect(viewModel.messages.last?.author == .error)
         #expect(viewModel.messages.last?.text == TestError.download.localizedDescription)
         #expect(viewModel.modelName == "Download failed")
-        #expect(viewModel.status == "Download failed")
+        #expect(viewModel.modelStatus == "Download failed")
         #expect(viewModel.canDownload)
         #expect(!viewModel.isModelReady)
     }
@@ -74,7 +74,7 @@ struct ChatViewModelTests {
         #expect(await waitUntil { !viewModel.isGenerating })
         #expect(viewModel.messages.map(\.author) == [.user, .model])
         #expect(viewModel.messages.last?.text == "Hi there")
-        #expect(viewModel.status == "Ready")
+        #expect(viewModel.modelStatus == "Ready")
         let prompts = await stub.prompts()
         #expect(prompts == ["Hello model"])
     }
@@ -90,7 +90,7 @@ struct ChatViewModelTests {
         #expect(await waitUntil { !viewModel.isGenerating })
         #expect(viewModel.messages.map(\.author) == [.user, .error])
         #expect(viewModel.messages.last?.text == TestError.generation.localizedDescription)
-        #expect(viewModel.status == "Model error")
+        #expect(viewModel.modelStatus == "Model error")
     }
 
     @Test func sendIgnoresInvalidState() async {

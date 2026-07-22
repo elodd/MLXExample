@@ -3,9 +3,14 @@ import MLXQtBridge
 
 protocol ModelManaging: Sendable {
     func setProgressHandler(_ handler: (@Sendable (Int) -> Void)?) async
+    func resetDownload() async throws
     func ensureDownloaded() async throws
     func load() async throws
     func generate(prompt: String) async throws -> String
+}
+
+extension ModelManaging {
+    func resetDownload() async throws {}
 }
 
 extension ModelManager: ModelManaging {}
@@ -26,10 +31,11 @@ struct ChatMessage: Identifiable, Equatable {
 final class ChatViewModel: ObservableObject {
     @Published var messages: [ChatMessage] = []
     @Published var draft = ""
-    @Published var progress = 0
+    @Published var downloadProgress = 0
     @Published var modelName = "No model selected"
-    @Published var status = "Ready"
+    @Published var modelStatus = "Ready"
     @Published var isDownloading = false
+    @Published var downloadFailed = false
     @Published var isModelReady = false
     @Published var isGenerating = false
 
@@ -46,26 +52,33 @@ final class ChatViewModel: ObservableObject {
 
     func downloadModel() {
         guard canDownload else { return }
+        downloadProgress = 0
         isDownloading = true
         modelName = "Downloading Qwen3 4B…"
-        status = "Downloading model… Keep the app open"
+        modelStatus = "Downloading model… Keep the app open"
 
         Task {
             await modelManager.setProgressHandler { [weak self] value in
-                Task { @MainActor in self?.progress = value }
+                Task { @MainActor in self?.downloadProgress = value }
             }
             do {
+                if downloadFailed {
+                    messages.removeAll { $0.author == .error }
+                    try await modelManager.resetDownload()
+                }
                 try await modelManager.ensureDownloaded()
-                status = "Loading model…"
+                modelStatus = "Loading model…"
                 try await modelManager.load()
-                progress = 100
+                downloadProgress = 100
                 modelName = "Qwen3-4B-4bit-mlx"
-                status = "Model ready"
+                modelStatus = "Model ready"
+                downloadFailed = false
                 isModelReady = true
             } catch {
                 messages.append(.init(author: .error, text: error.localizedDescription))
                 modelName = "Download failed"
-                status = "Download failed"
+                modelStatus = "Download failed"
+                downloadFailed = true
             }
             isDownloading = false
         }
@@ -77,16 +90,16 @@ final class ChatViewModel: ObservableObject {
         messages.append(.init(author: .user, text: prompt))
         draft = ""
         isGenerating = true
-        status = "Thinking…"
+        modelStatus = "Thinking…"
 
         Task {
             do {
                 let response = try await modelManager.generate(prompt: prompt)
                 messages.append(.init(author: .model, text: response))
-                status = "Ready"
+                modelStatus = "Ready"
             } catch {
                 messages.append(.init(author: .error, text: error.localizedDescription))
-                status = "Model error"
+                modelStatus = "Model error"
             }
             isGenerating = false
         }

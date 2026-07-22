@@ -21,7 +21,7 @@ struct ContentView: View {
                 conversation
                 composer
 
-                Text(viewModel.status)
+                Text(viewModel.modelStatus)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -40,6 +40,9 @@ struct ContentView: View {
                 isComposerFocused = true
             }
         }
+        .onAppear() {
+            viewModel.downloadModel()
+        }
     }
 
     private var modelSection: some View {
@@ -49,7 +52,7 @@ struct ContentView: View {
                     .font(.subheadline)
                     .lineLimit(1)
                 Spacer(minLength: 8)
-                Button("Download model") {
+                Button(viewModel.downloadFailed ? "Retry download" : "Download model") {
                     viewModel.downloadModel()
                 }
                 .font(.system(size: 11, weight: .semibold))
@@ -59,11 +62,11 @@ struct ContentView: View {
                 .disabled(!viewModel.canDownload)
             }
 
-            ProgressView(value: Double(viewModel.progress), total: 100)
+            ProgressView(value: Double(viewModel.downloadProgress), total: 100)
                 .tint(Color(red: 0.47, green: 0.84, blue: 0.78))
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .accessibilityLabel("Model download progress")
-                .accessibilityValue("\(viewModel.progress) percent")
+                .accessibilityValue("\(viewModel.downloadProgress) percent")
         }
     }
 
