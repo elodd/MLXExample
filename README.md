@@ -17,6 +17,21 @@ processes conversations locally after the initial download.
 - Multi-turn chat with selectable responses
 - iPhone and iPad support
 
+## Screenshots
+
+<table>
+  <tr>
+    <td><img src="ios/QtLlamaSwiftUI/Screenshots/model-selection.png" alt="Model download screen"></td>
+    <td><img src="ios/QtLlamaSwiftUI/Screenshots/model-downloading.png" alt="Model downloading screen"></td>
+    <td><img src="ios/QtLlamaSwiftUI/Screenshots/model-ready.png" alt="Model ready with focused composer"></td>
+  </tr>
+  <tr>
+    <td align="center">Select model</td>
+    <td align="center">Downloading</td>
+    <td align="center">Model ready</td>
+  </tr>
+</table>
+
 ## Architecture
 
 The project has two runtime layers:
@@ -86,6 +101,10 @@ the intended inference target.
         │       ├── Contents.json
         │       └── AppIcon-1024.png  App icon master artwork
         ├── project.yml               XcodeGen project definition
+        ├── Screenshots/              README screenshots
+        │   ├── model-selection.png
+        │   ├── model-downloading.png
+        │   └── model-ready.png
         ├── Sources/
         │   ├── QtLlamaApp.swift      Application entry point
         │   ├── ContentView.swift     Chat interface

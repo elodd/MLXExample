@@ -18,6 +18,21 @@ The message field remains visible while the model is unavailable or
 downloading, and becomes interactive after the model has downloaded and
 loaded successfully.
 
+## Screenshots
+
+<table>
+  <tr>
+    <td><img src="Screenshots/model-selection.png" alt="Model download screen"></td>
+    <td><img src="Screenshots/model-downloading.png" alt="Model downloading screen"></td>
+    <td><img src="Screenshots/model-ready.png" alt="Model ready with focused composer"></td>
+  </tr>
+  <tr>
+    <td align="center">Select model</td>
+    <td align="center">Downloading</td>
+    <td align="center">Model ready</td>
+  </tr>
+</table>
+
 ## Requirements
 
 - An Apple-silicon Mac
@@ -40,6 +55,10 @@ Apple-silicon device is the intended inference target.
 ├── README.md                         SwiftUI app documentation
 ├── Assets.xcassets/                  App icon asset catalog
 ├── project.yml                       XcodeGen project definition
+├── Screenshots/                      README screenshots
+│   ├── model-selection.png
+│   ├── model-downloading.png
+│   └── model-ready.png
 ├── Sources/
 │   ├── QtLlamaApp.swift              Application entry point
 │   ├── ContentView.swift             Chat interface
