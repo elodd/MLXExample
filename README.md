@@ -1,10 +1,12 @@
 # MLXExample
 
-MLXExample combines a native SwiftUI iOS frontend with an on-device MLX
-inference backend. It runs Qwen3 locally through
+Native Qwen3 chat for iPhone and iPad, powered by Apple MLX.
+
+MLXExample combines a SwiftUI interface with an on-device inference layer. It
+runs Qwen3 locally through
 [MLX Swift LM](https://github.com/ml-explore/mlx-swift-lm), without an API
-server. The backend downloads a four-bit MLX model, caches it on the device,
-and exposes model operations to the frontend.
+server. The app downloads a four-bit MLX model, caches it on the device, and
+processes conversations locally after the initial download.
 
 ## Features
 
@@ -15,17 +17,14 @@ and exposes model operations to the frontend.
 - Multi-turn chat with selectable responses
 - iPhone and iPad support
 
-After the initial model download, prompts and responses are processed locally.
-
 ## Architecture
 
-The project has two primary layers:
+The project has two runtime layers:
 
-- **iOS frontend (`ios/QtLlamaSwiftUI`)** — the SwiftUI interface, chat state,
-  model status, download progress, and user interaction.
-- **MLX backend (`ios/MLXQtBridge`)** — a local Swift package responsible for
-  downloading and extracting the model, loading it with MLX Swift LM, managing
-  the chat session, and generating responses.
+- **SwiftUI app (`ios/QtLlamaSwiftUI`)** — presents the chat, tracks model and
+  download state, and manages user interaction.
+- **MLX bridge (`ios/MLXQtBridge`)** — downloads and extracts the model, loads
+  it with MLX Swift LM, manages the chat session, and generates responses.
 
 ```text
 SwiftUI views
@@ -35,49 +34,63 @@ ChatViewModel
     │
     ▼
 MLXQtBridge / ModelManager
-    │
     ├── downloads and caches the MLX model
     └── runs Qwen3 inference with MLX Swift LM
 ```
 
-The bridge provides a native Swift `ModelManager` API used by the current
-frontend. It also exports C-compatible lifecycle, model-loading, generation,
-download, and cancellation functions for integration with other native UI
-layers.
+The bridge exposes a native Swift `ModelManager` API. It also exports
+C-compatible lifecycle, loading, generation, download, and cancellation
+functions for use by other native UI layers.
 
 ## Requirements
 
 - An Apple-silicon Mac
 - Xcode with Swift 6 support
-- XcodeGen only when regenerating the checked-in Xcode project
 - iOS 17 or later
 - A physical iPhone or iPad recommended for inference
-- An Apple development team for installing on a device
-- Approximately 2.1 GB for the model download, plus space for extraction and
-  runtime data
+- An Apple development team for device installation
+- Approximately 2.1 GB for the model download, plus extraction and runtime
+  space
+- XcodeGen only when regenerating the checked-in Xcode project
 
 A recent device with at least 6 GB of memory is recommended for the four-bit
-4B model. The simulator is useful for UI work, but a physical Apple-silicon
-device is the intended inference target.
+4B model. The simulator is useful for UI development, but a physical device is
+the intended inference target.
 
 ## Project structure
 
 ```text
 .
+├── README.md                         Project documentation
+├── .gitignore                        Generated and local-file exclusions
 ├── backend/
-│   ├── convert_to_mlx.py          Optional Hugging Face-to-MLX converter
-│   ├── requirements-mlx-convert.txt
-│   └── Qwen3-4B-Q4_K_M.gguf       GGUF model; not loaded by the iOS app
+│   ├── requirements.txt              Python conversion dependencies
+│   ├── src/
+│   │   └── convert_to_mlx.py         Hugging Face-to-MLX converter
+│   └── tests/
+│       └── test_convert_to_mlx.py    Converter unit tests
 └── ios/
-    ├── Assets.xcassets/            Shared app assets
-    ├── MLXQtBridge/                On-device MLX inference backend
-    ├── PrivacyInfo.xcprivacy       App privacy manifest
-    └── QtLlamaSwiftUI/             iOS frontend and Xcode project
+    ├── Assets.xcassets/              Shared app assets and app icon
+    ├── Info.plist.in                 Info property-list template
+    ├── PrivacyInfo.xcprivacy         App privacy manifest
+    ├── MLXQtBridge/                  On-device MLX inference package
+    │   ├── Package.swift             Swift package definition
+    │   ├── Package.resolved          Pinned Swift dependencies
+    │   └── Sources/MLXQtBridge/
+    │       └── MLXQtBridge.swift     Model download, loading, and inference
+    └── QtLlamaSwiftUI/               SwiftUI frontend
+        ├── Sources/
+        │   ├── QtLlamaApp.swift      Application entry point
+        │   ├── ContentView.swift     Chat interface
+        │   └── ChatViewModel.swift   UI state and bridge integration
+        ├── Tests/
+        │   └── ChatViewModelTests.swift
+        ├── project.yml               XcodeGen project definition
+        └── QtLlamaSwiftUI.xcodeproj/ Checked-in Xcode project
 ```
 
-The top-level `backend` directory contains development-time model tooling and
-a GGUF artifact. Runtime inference for the iOS app is implemented by
-`ios/MLXQtBridge`; the app does not run a separate Python service.
+Python is used only for optional model conversion. The iOS app does not run a
+Python service.
 
 ## Build and run
 
@@ -89,7 +102,7 @@ a GGUF artifact. Runtime inference for the iOS app is implemented by
 5. Build and run the `QtLlamaSwiftUI` scheme.
 
 The project uses `ios/MLXQtBridge` as a local Swift package. Xcode resolves its
-pinned package dependencies the first time the project is opened.
+pinned dependencies the first time the project is opened.
 
 To verify a simulator build from the repository root:
 
@@ -122,30 +135,60 @@ xcodegen generate
 4. Enter a prompt and tap **Send**.
 
 The app downloads `Qwen3-4B-4bit-mlx`, extracts it into
-`Application Support/Models`, and reuses it on subsequent launches. Generation
-currently uses a 512-token maximum response length, a 2,048-token rotating KV
-cache, and a temperature of 0.7. Deleting the app or its data removes the
-cached model.
+`Application Support/Models`, and reuses it on later launches. Generation uses
+a 512-token maximum response length, a 2,048-token rotating KV cache, and a
+temperature of 0.7. Deleting the app or its data removes the cached model.
 
 ## Optional model conversion
 
 The Python utility converts original Hugging Face-format weights to an MLX
-model directory on Apple silicon. It cannot convert GGUF directly because GGUF
-and MLX use different formats and quantization layouts.
+model directory on Apple silicon. It does not convert GGUF files.
 
 ```sh
 cd backend
 python3 -m venv .venv-mlx
 source .venv-mlx/bin/activate
 python -m pip install --upgrade pip
-python -m pip install -r requirements-mlx-convert.txt
-python convert_to_mlx.py
+python -m pip install -r requirements.txt
+python src/convert_to_mlx.py
 ```
 
-Run `python convert_to_mlx.py --help` for source model, revision, output,
-quantization, and Hugging Face upload options. Creating a local conversion does
-not change the download URL used by the app; that URL is configured in
+Run `python src/convert_to_mlx.py --help` for all source model, revision,
+output, quantization, and Hugging Face upload options. For example:
+
+```sh
+python src/convert_to_mlx.py \
+  --model Qwen/Qwen3-4B \
+  --revision main \
+  --bits 8 \
+  --output Qwen/Qwen3-4B-8bit-mlx
+```
+
+The converter accepts a Hugging Face repository ID or a local directory with
+Hugging Face-format weights. It does not overwrite an existing output
+directory. A local conversion does not change the model downloaded by the app;
+that URL is configured in
 `ios/MLXQtBridge/Sources/MLXQtBridge/MLXQtBridge.swift`.
+
+## Tests
+
+The Python tests use only the standard library and mock MLX and Hugging Face,
+so conversion dependencies are not required:
+
+```sh
+python3 -m unittest discover -s backend/tests -v
+```
+
+Run the SwiftUI unit tests with an installed simulator:
+
+```sh
+xcodebuild test \
+  -project ios/QtLlamaSwiftUI/QtLlamaSwiftUI.xcodeproj \
+  -scheme QtLlamaSwiftUI \
+  -destination 'platform=iOS Simulator,name=iPhone 16 Pro'
+```
+
+Replace the simulator name if `iPhone 16 Pro` is not installed.
 
 ## Troubleshooting
 
