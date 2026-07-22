@@ -106,7 +106,7 @@ public actor ModelManager {
     private let archiveURL: URL
 
     private static let defaultArchiveURL = URL(string:
-        "https://example.com/model.zip"
+        "https://drive.usercontent.google.com/download?id=ZIP_FILE_ID&export=download&confirm=t"
     )!
     private static let modelName = "Qwen3-4B-4bit-mlx"
 

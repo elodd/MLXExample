@@ -25,11 +25,13 @@ loaded successfully.
     <td><img src="Screenshots/model-selection.png" alt="Model download screen"></td>
     <td><img src="Screenshots/model-downloading.png" alt="Model downloading screen"></td>
     <td><img src="Screenshots/model-ready.png" alt="Model ready with focused composer"></td>
+    <td><img src="Screenshots/download-error.png" alt="Model download error screen"></td>
   </tr>
   <tr>
     <td align="center">Select model</td>
     <td align="center">Downloading</td>
     <td align="center">Model ready</td>
+    <td align="center">Download error</td>
   </tr>
 </table>
 
@@ -58,7 +60,8 @@ Apple-silicon device is the intended inference target.
 ├── Screenshots/                      README screenshots
 │   ├── model-selection.png
 │   ├── model-downloading.png
-│   └── model-ready.png
+│   ├── model-ready.png
+│   └── download-error.png
 ├── Sources/
 │   ├── QtLlamaApp.swift              Application entry point
 │   ├── ContentView.swift             Chat interface
