@@ -64,7 +64,9 @@ final class ChatViewModelTests: XCTestCase {
 
         viewModel.send()
 
-        XCTAssertEqual(viewModel.messages, [.init(author: .user, text: "Hello model")])
+        XCTAssertEqual(viewModel.messages.count, 1)
+        XCTAssertEqual(viewModel.messages.first?.author, .user)
+        XCTAssertEqual(viewModel.messages.first?.text, "Hello model")
         XCTAssertEqual(viewModel.draft, "")
         XCTAssertTrue(viewModel.isGenerating)
         await waitUntil { !viewModel.isGenerating }
