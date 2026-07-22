@@ -41,11 +41,6 @@ Apple-silicon device is the intended inference target.
 ├── README.md                         SwiftUI app documentation
 ├── Assets.xcassets/                  App icon asset catalog
 ├── project.yml                       XcodeGen project definition
-├── Screenshots/                      README screenshots
-│   ├── model-selection.png
-│   ├── model-downloading.png
-│   ├── model-ready.png
-│   └── download-error.png
 ├── Sources/
 │   ├── QtLlamaApp.swift              Application entry point
 │   ├── ContentView.swift             Chat interface

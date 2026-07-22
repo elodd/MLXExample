@@ -87,11 +87,6 @@ the intended inference target.
         │       ├── Contents.json
         │       └── AppIcon-1024.png  App icon master artwork
         ├── project.yml               XcodeGen project definition
-        ├── Screenshots/              README screenshots
-        │   ├── model-selection.png
-        │   ├── model-downloading.png
-        │   ├── model-ready.png
-        │   └── download-error.png
         ├── Sources/
         │   ├── QtLlamaApp.swift      Application entry point
         │   ├── ContentView.swift     Chat interface
