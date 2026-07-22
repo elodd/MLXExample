@@ -171,7 +171,7 @@ public actor ModelManager {
     private let archiveURL: URL?
 
     private static let defaultArchiveURL = URL(
-        string: "https://drive.usercontent.google.com/download?id=1JH5g4_ZbrcgECzIFlq1QEKTdoH7-NtSo&export=download&confirm=t"
+        string: "https://example.com/models/Qwen3-4B-4bit-mlx.zip"
     )
     private static let modelName = "Qwen3-4B-4bit-mlx"
     private static let expectedArchiveBytes: Int64 = 2_051_232_582
