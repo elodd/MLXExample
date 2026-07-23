@@ -160,6 +160,27 @@ The app downloads the configured archive, extracts `Qwen3-4B-4bit-mlx` into
 a 512-token maximum response length, a 2,048-token rotating KV cache, and a
 temperature of 0.7. Deleting the app or its data removes the cached model.
 
+## Hugging Face-format weights
+
+Hugging Face-format weights are the original model checkpoint files published
+in a Hugging Face model repository or saved in an equivalent local directory.
+Such a directory normally contains `config.json`, tokenizer files, and one or
+more `.safetensors` weight files, with an index file when the weights are
+sharded.
+
+For conversion, provide either a repository ID such as `Qwen/Qwen3-4B` or the
+path to a local directory containing those files. A GGUF file and an already
+converted MLX model are not Hugging Face-format source weights.
+
+MLX creates a smaller model by quantizing the original weights. The default
+conversion stores each weight at 4-bit precision instead of the higher
+precision used by the source checkpoint, which substantially reduces the
+model's download size and runtime memory requirements. Quantization keeps the
+same model architecture and parameter count, but represents the parameters
+with fewer bits; this can introduce a small loss in output quality. Use
+`--bits` to select another supported precision, or `--no-quantize` to retain
+the source precision.
+
 ## Optional model conversion
 
 The Python utility converts original Hugging Face-format weights to an MLX
