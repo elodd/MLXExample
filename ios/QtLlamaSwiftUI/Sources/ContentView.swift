@@ -82,6 +82,11 @@ struct ContentView: View {
                     ForEach(viewModel.messages) { message in
                         MessageView(message: message).id(message.id)
                     }
+                    if viewModel.isGenerating {
+                        GenerationProgressView(progress: viewModel.generationProgress)
+                            .id("generation-progress")
+                            .transition(.opacity.combined(with: .move(edge: .bottom)))
+                    }
                 }
                 .padding(16)
             }
@@ -91,6 +96,10 @@ struct ContentView: View {
             .onChange(of: viewModel.messages) { _, messages in
                 guard let last = messages.last else { return }
                 withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
+            }
+            .onChange(of: viewModel.isGenerating) { _, isGenerating in
+                guard isGenerating else { return }
+                withAnimation { proxy.scrollTo("generation-progress", anchor: .bottom) }
             }
         }
     }
@@ -113,6 +122,53 @@ struct ContentView: View {
                 .tint(Color(red: 0.46, green: 0.35, blue: 0.91))
                 .disabled(!viewModel.canSend)
         }
+    }
+}
+
+private struct GenerationProgressView: View {
+    @ObservedObject var progress: GenerationProgress
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                TimelineView(.periodic(from: .now, by: 0.45)) { context in
+                    Text(progress.status + dots(at: context.date))
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color(red: 0.73, green: 0.66, blue: 1))
+                        .contentTransition(.numericText())
+                }
+
+                Spacer(minLength: 8)
+
+                Text(elapsedTime)
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .accessibilityLabel("Elapsed time \(progress.elapsedSeconds) seconds")
+            }
+
+            ProgressView(value: progress.progress)
+                .tint(Color(red: 0.47, green: 0.84, blue: 0.78))
+                .animation(.easeOut(duration: 0.6), value: progress.progress)
+                .accessibilityLabel("Response generation progress")
+                .accessibilityValue("\(Int(progress.progress * 100)) percent")
+        }
+        .padding(12)
+        .background(Color(red: 0.13, green: 0.14, blue: 0.18))
+        .clipShape(RoundedRectangle(cornerRadius: 9))
+        .overlay {
+            RoundedRectangle(cornerRadius: 9)
+                .stroke(Color(red: 0.29, green: 0.25, blue: 0.44))
+        }
+    }
+
+    private var elapsedTime: String {
+        let minutes = progress.elapsedSeconds / 60
+        let seconds = progress.elapsedSeconds % 60
+        return String(format: "%d:%02d", minutes, seconds)
+    }
+
+    private func dots(at date: Date) -> String {
+        String(repeating: ".", count: Int(date.timeIntervalSinceReferenceDate / 0.45) % 3 + 1)
     }
 }
 

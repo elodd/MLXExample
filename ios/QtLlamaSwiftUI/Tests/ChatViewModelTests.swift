@@ -71,7 +71,13 @@ struct ChatViewModelTests {
         #expect(viewModel.messages.first?.text == "Hello model")
         #expect(viewModel.draft == "")
         #expect(viewModel.isGenerating)
+        #expect(viewModel.generationProgress.isActive)
+        #expect(viewModel.generationProgress.progress == 0.05)
+        #expect(viewModel.generationProgress.status == "Preparing model")
         #expect(await waitUntil { !viewModel.isGenerating })
+        #expect(!viewModel.generationProgress.isActive)
+        #expect(viewModel.generationProgress.progress == 1)
+        #expect(viewModel.generationProgress.status == "Complete")
         #expect(viewModel.messages.map(\.author) == [.user, .model])
         #expect(viewModel.messages.last?.text == "Hi there")
         #expect(viewModel.modelStatus == "Ready")
@@ -91,6 +97,8 @@ struct ChatViewModelTests {
         #expect(viewModel.messages.map(\.author) == [.user, .error])
         #expect(viewModel.messages.last?.text == TestError.generation.localizedDescription)
         #expect(viewModel.modelStatus == "Model error")
+        #expect(!viewModel.generationProgress.isActive)
+        #expect(viewModel.generationProgress.status == "Stopped")
     }
 
     @Test func sendIgnoresInvalidState() async {

@@ -33,11 +33,12 @@ final class ChatViewModel: ObservableObject {
     @Published var draft = ""
     @Published var downloadProgress = 0
     @Published var modelName = "No model selected"
-    @Published var modelStatus = "Ready"
+    @Published var modelStatus = "No model selected"
     @Published var isDownloading = false
     @Published var downloadFailed = false
     @Published var isModelReady = false
     @Published var isGenerating = false
+    let generationProgress = GenerationProgress()
 
     private let modelManager: any ModelManaging
 
@@ -91,13 +92,16 @@ final class ChatViewModel: ObservableObject {
         draft = ""
         isGenerating = true
         modelStatus = "Thinking…"
+        generationProgress.start()
 
         Task {
             do {
                 let response = try await modelManager.generate(prompt: prompt)
+                generationProgress.finish()
                 messages.append(.init(author: .model, text: response))
                 modelStatus = "Ready"
             } catch {
+                generationProgress.fail()
                 messages.append(.init(author: .error, text: error.localizedDescription))
                 modelStatus = "Model error"
             }
